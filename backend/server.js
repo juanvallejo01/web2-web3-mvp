@@ -8,6 +8,11 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import eventRoutes from './routes/events.js';
+import soundcloudRoutes from './routes/soundcloud.js';
+import soundcloudOAuthRoutes from './routes/soundcloudOAuth.js';
+import tippingRoutes from './routes/tipping.js';
+import circleRoutes from './routes/circle.js';
+import receiversRoutes from './routes/receivers.js';
 
 // Load environment variables
 dotenv.config();
@@ -31,6 +36,11 @@ app.get('/health', (req, res) => {
 
 // Routes
 app.use('/api/events', eventRoutes);
+app.use('/api/soundcloud', soundcloudRoutes);
+app.use('/api/soundcloud/oauth', soundcloudOAuthRoutes);
+app.use('/api/circle', circleRoutes);
+app.use('/api/tipping', tippingRoutes);
+app.use('/api/receivers', receiversRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {
@@ -42,7 +52,18 @@ app.get('/', (req, res) => {
       events: {
         create: 'POST /api/events',
         list: 'GET /api/events',
-        stats: 'GET /api/events/stats'
+        stats: 'GET /api/events/stats',
+        confirm: 'POST /api/events/:id/confirm'
+      },
+      soundcloud: {
+        like: 'POST /api/soundcloud/like',
+        follow: 'POST /api/soundcloud/follow'
+      },
+      tipping: {
+        getConfig: 'GET /api/tipping/config?walletAddress=0x...',
+        saveConfig: 'POST /api/tipping/config',
+        quote: 'POST /api/tipping/quote',
+        recordPayment: 'POST /api/tipping/recordPayment'
       }
     }
   });

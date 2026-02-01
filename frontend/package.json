@@ -9,12 +9,15 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@circle-fin/w3s-pw-web-sdk": "^1.1.11",
+    "ethers": "^6.16.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "ethers": "^6.16.0"
+    "viem": "^2.45.1"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",
-    "vite": "^6.0.7"
+    "vite": "^6.0.7",
+    "vite-plugin-node-polyfills": "^0.25.0"
   }
 }

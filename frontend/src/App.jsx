@@ -1,18 +1,55 @@
 /**
- * Main App Component
- * Web2-Web3 Bridge MVP Frontend
+ * Main App Component - Productized UI
+ * Web2-Web3 Bridge MVP Frontend with MetaMask-style layout
  */
 
-import { useState } from 'react';
-import WalletConnect from './components/WalletConnect';
-import SpotifyConnect from './components/SpotifyConnect';
-import EventTrigger from './components/EventTrigger';
-import EventList from './components/EventList';
+import { useState, useEffect } from 'react';
+import AppShell from './components/layout/AppShell';
+import Dashboard from './views/Dashboard';
+import Fan from './views/Fan';
+import Creator from './views/Creator';
+import Activity from './views/Activity';
+import Admin from './views/Admin';
 
 function App() {
   const [walletAddress, setWalletAddress] = useState(null);
   const [identity, setIdentity] = useState(null);
   const [refreshCounter, setRefreshCounter] = useState(0);
+  const [currentView, setCurrentView] = useState('dashboard');
+  const [events, setEvents] = useState([]);
+
+  // Load identity from localStorage on mount
+  useEffect(() => {
+    const storedIdentity = localStorage.getItem('web3_identity');
+    if (storedIdentity) {
+      try {
+        setIdentity(JSON.parse(storedIdentity));
+      } catch (e) {
+        console.error('Failed to parse stored identity:', e);
+      }
+    }
+  }, []);
+
+  // Load events for dashboard stats
+  useEffect(() => {
+    const loadEvents = async () => {
+      try {
+        const response = await fetch('http://localhost:3001/api/events');
+        if (response.ok) {
+          const data = await response.json();
+          setEvents(data.events || []);
+        }
+      } catch (err) {
+        console.error('Failed to load events:', err);
+      }
+    };
+    loadEvents();
+    
+    // Refresh when counter changes
+    if (refreshCounter > 0) {
+      loadEvents();
+    }
+  }, [refreshCounter]);
 
   const handleWalletChange = (address) => {
     setWalletAddress(address);
@@ -20,57 +57,74 @@ function App() {
 
   const handleIdentityChange = (newIdentity) => {
     setIdentity(newIdentity);
+    // Persist to localStorage
+    if (newIdentity) {
+      localStorage.setItem('web3_identity', JSON.stringify(newIdentity));
+    }
   };
 
-  const handleEventSubmitted = () => {
-    // Trigger EventList refresh
-    setRefreshCounter(prev => prev + 1);
+  const handleViewChange = (view) => {
+    setCurrentView(view);
+  };
+
+  // Render current view
+  const renderView = () => {
+    switch (currentView) {
+      case 'dashboard':
+        return (
+          <Dashboard
+            identity={identity}
+            onIdentityChange={handleIdentityChange}
+            walletAddress={walletAddress}
+            onWalletChange={handleWalletChange}
+            events={events}
+          />
+        );
+      
+      case 'fan':
+        return (
+          <Fan
+            identity={identity}
+            onIdentityChange={handleIdentityChange}
+            walletAddress={walletAddress}
+            events={events}
+            refreshTrigger={refreshCounter}
+          />
+        );
+      
+      case 'creator':
+        return (
+          <Creator
+            walletAddress={walletAddress}
+          />
+        );
+      
+      case 'activity':
+        return (
+          <Activity
+            walletAddress={walletAddress}
+            events={events}
+            refreshTrigger={refreshCounter}
+          />
+        );
+      
+      case 'admin':
+        return <Admin />;
+      
+      default:
+        return <Dashboard {...{identity, onIdentityChange, walletAddress, onWalletChange, events}} />;
+    }
   };
 
   return (
-    <div style={{ 
-      maxWidth: '800px', 
-      margin: '0 auto', 
-      padding: '20px',
-      fontFamily: 'Arial, sans-serif'
-    }}>
-      <header style={{ marginBottom: '30px', textAlign: 'center' }}>
-        <h1>Web2 → Web3 Bridge MVP</h1>
-        <p style={{ color: '#666' }}>
-          Simulate Web2 actions and verify them with Web3 signatures
-        </p>
-      </header>
-
-      <WalletConnect 
-        onWalletChange={handleWalletChange}
-        onIdentityChange={handleIdentityChange}
-      />
-      
-      <SpotifyConnect 
-        identity={identity}
-        onIdentityUpdated={handleIdentityChange}
-      />
-      
-      <EventTrigger 
-        walletAddress={walletAddress}
-        identity={identity}
-        onEventSubmitted={handleEventSubmitted}
-      />
-      
-      <EventList refreshTrigger={refreshCounter} />
-
-      <footer style={{ 
-        marginTop: '30px', 
-        padding: '15px', 
-        textAlign: 'center', 
-        fontSize: '12px', 
-        color: '#999',
-        borderTop: '1px solid #ccc'
-      }}>
-        <p>Backend: http://localhost:3001 | Frontend: Vite + React</p>
-        <p>Session-based wallet identity with localStorage persistence</p>
-      </footer>
-    </div>
+    <AppShell
+      identity={identity}
+      walletAddress={walletAddress}
+      currentView={currentView}
+      onViewChange={handleViewChange}
+    >
+      {renderView()}
+    </AppShell>
   );
 }
 

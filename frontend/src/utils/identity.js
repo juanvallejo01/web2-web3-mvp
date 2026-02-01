@@ -25,7 +25,9 @@ export const createIdentity = (session) => {
     connectedAt: session.connectedAt,
     // External identity mappings (future: OAuth linking)
     externalIds: {
-      spotify: null,      // Will be set after Spotify OAuth
+      circle: null,       // Circle email OTP authentication (new)
+      soundcloud: null,   // Will be set after SoundCloud OAuth/mock login
+      spotify: null,      // Legacy - keeping for backward compatibility
       farcaster: null,    // Will be set after Farcaster linking
       twitter: null,      // Will be set after Twitter OAuth
       discord: null       // Will be set after Discord OAuth
@@ -141,4 +143,27 @@ export const createActor = (identity) => {
     // Include linked Web2 accounts if any
     ...(Object.keys(linkedAccounts).length > 0 && { linkedAccounts })
   };
+};
+
+/**
+ * Link Circle authentication to identity
+ * @param {object} identity - Current identity
+ * @param {object} circleData - Circle user data { email, userId, userToken }
+ * @returns {object} - Updated identity
+ */
+export const linkCircle = (identity, circleData) => {
+  const updatedIdentity = {
+    ...identity,
+    externalIds: {
+      ...identity.externalIds,
+      circle: circleData
+    },
+    metadata: {
+      ...identity.metadata,
+      lastActive: Date.now()
+    }
+  };
+  
+  saveIdentity(updatedIdentity);
+  return updatedIdentity;
 };

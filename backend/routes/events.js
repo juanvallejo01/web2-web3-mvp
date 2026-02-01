@@ -4,7 +4,7 @@
  */
 
 import express from 'express';
-import { addEvent, getAllEvents, getEventCount } from '../storage.js';
+import { addEvent, getAllEvents, getEventCount, getEventById, updateEvent } from '../storage.js';
 import { verifySignature, isValidAddress, constructMessage } from '../utils/verify.js';
 
 const router = express.Router();
@@ -91,7 +91,9 @@ router.post('/', async (req, res) => {
       target,
       timestamp,
       walletAddress,
-      verified: true
+      status: 'verified',  // Direct verification (old flow)
+      verified: true,
+      signature  // Store signature for audit trail
     };
 
     const savedEvent = addEvent(event);
@@ -164,6 +166,92 @@ router.get('/stats', (req, res) => {
     });
   } catch (error) {
     console.error('Error retrieving stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error'
+    });
+  }
+});
+
+/**
+ * POST /events/:id/confirm
+ * Confirm and verify an "observed" event with signature
+ * Transitions: observed → verified
+ * 
+ * Body:
+ * {
+ *   signature: string  // MetaMask signature
+ * }
+ */
+router.post('/:id/confirm', async (req, res) => {
+  try {
+    const eventId = parseInt(req.params.id);
+    const { signature } = req.body;
+
+    if (!signature) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing signature'
+      });
+    }
+
+    // Get existing event
+    const event = getEventById(eventId);
+    if (!event) {
+      return res.status(404).json({
+        success: false,
+        error: 'Event not found'
+      });
+    }
+
+    // Check current status
+    if (event.status !== 'observed') {
+      return res.status(400).json({
+        success: false,
+        error: `Event already ${event.status}. Can only confirm observed events.`
+      });
+    }
+
+    // Reconstruct message (same as original event)
+    const reconstructedMessage = constructMessage({
+      platform: event.platform,
+      action: event.action,
+      actor: event.actor,
+      target: event.target,
+      timestamp: event.timestamp,
+      walletAddress: event.walletAddress
+    });
+
+    // Verify signature
+    const isValidSignature = verifySignature(
+      reconstructedMessage, 
+      signature, 
+      event.walletAddress
+    );
+
+    if (!isValidSignature) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid signature - verification failed'
+      });
+    }
+
+    // Update event status: observed → verified
+    const updatedEvent = updateEvent(eventId, {
+      status: 'verified',
+      verified: true,
+      signature,
+      verifiedAt: new Date().toISOString()
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Event confirmed and verified',
+      event: updatedEvent
+    });
+
+  } catch (error) {
+    console.error('[Events /confirm] Error:', error);
     res.status(500).json({
       success: false,
       error: 'Internal server error'

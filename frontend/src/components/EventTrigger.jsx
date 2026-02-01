@@ -87,19 +87,19 @@ export default function EventTrigger({ walletAddress, identity, onEventSubmitted
           <div style={{ marginBottom: '10px', padding: '8px', backgroundColor: '#e3f2fd', borderRadius: '4px' }}>
             <p style={{ fontSize: '11px', color: '#1976d2', margin: '2px 0' }}>
               🔐 Acting as: wallet ({identity.sessionId.slice(0, 8)}...)
-              {identity.externalIds?.spotify && (
-                <span style={{ marginLeft: '8px', color: '#1DB954', fontWeight: 'bold' }}>
-                  + Spotify ({identity.externalIds.spotify})
+              {identity.externalIds?.soundcloud && (
+                <span style={{ marginLeft: '8px', color: '#FF5500', fontWeight: 'bold' }}>
+                  + SoundCloud ({identity.externalIds.soundcloud.slice(0, 20)}...)
                 </span>
               )}
             </p>
-            {!identity.externalIds?.spotify ? (
+            {!identity.externalIds?.soundcloud ? (
               <p style={{ fontSize: '10px', color: '#666', margin: '2px 0', fontStyle: 'italic' }}>
-                Link Spotify below to prove unified Web2+Web3 identity
+                Link SoundCloud above to prove unified Web2+Web3 identity
               </p>
             ) : (
-              <p style={{ fontSize: '10px', color: '#1DB954', margin: '2px 0', fontWeight: 'bold' }}>
-                ✅ Unified identity: Your signature proves you own both wallet AND Spotify account
+              <p style={{ fontSize: '10px', color: '#FF5500', margin: '2px 0', fontWeight: 'bold' }}>
+                ✅ Unified identity: Your signature proves you own both wallet AND SoundCloud account
               </p>
             )}
           </div>
